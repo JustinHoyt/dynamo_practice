@@ -1,0 +1,17 @@
+{
+  "name": "dynamo_practice",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.85.0",
+    "@aws-sdk/lib-dynamodb": "^3.85.0",
+    "@aws-sdk/types": "^3.78.0",
+    "@aws-sdk/util-dynamodb": "^3.85.0"
+  }
+}
