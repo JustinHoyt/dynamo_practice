@@ -1,5 +1,5 @@
 import { DynamoDBClient, CreateTableCommand, ListTablesCommand, BatchWriteItemCommand, DeleteTableCommand, QueryCommand } from "@aws-sdk/client-dynamodb"
-import { unmarshall } from "@aws-sdk/util-dynamodb"
+import { marshall, unmarshall } from "@aws-sdk/util-dynamodb"
 
 const client = new DynamoDBClient({ region: "us-west-2" });
 
@@ -47,106 +47,82 @@ async function seedTable() {
             e_commerce: [
                 // Alex Debrie
                 {
-                    PutRequest: {
-                        Item: {
-                            PK: { S: 'CUSTOMER#alexdebrie'},
-                            SK: { S: 'CUSTOMER#alexdebrie'},
-                            Username: { S: 'alexdebrie'},
-                            EmailAddress: { S: 'alexdebrie1@gmail.com'},
-                            Name: { S: 'Alexde Brie'},
-                        },
-                    }
+                    PK: 'CUSTOMER#alexdebrie',
+                    SK: 'CUSTOMER#alexdebrie',
+                    Username: 'alexdebrie',
+                    EmailAddress: 'alexdebrie1@gmail.com',
+                    Name: 'Alexde Brie',
                 },
                 {
-                    PutRequest: {
-                        Item: {
-                            PK: { S: 'CUSTOMER#alexdebrie'},
-                            SK: { S: 'ORDER#VrgX'},
-                            OrderId: { S: 'VrgX'},
-                            CreatedAt: { S: '2020-01-03 01:57:44' },
-                            Status: { S: 'SHIPPED' },
-                            Amount: { S: '67.43' },
-                            NumberItems: { S: '7' },
-                            GSI1PK: { S: 'ORDER#VrgX' },
-                            GSI1SK: { S: 'ORDER#VrgX' },
-                        },
-                    },
+                    PK: 'CUSTOMER#alexdebrie',
+                    SK: 'ORDER#VrgX',
+                    OrderId: 'VrgX',
+                    CreatedAt: '2020-01-03 01:57:44' ,
+                    Status: 'SHIPPED' ,
+                    Amount: '67.43' ,
+                    NumberItems: '7' ,
+                    GSI1PK: 'ORDER#VrgX' ,
+                    GSI1SK: 'ORDER#VrgX' ,
                 },
                 {
-                    PutRequest: {
-                        Item: {
-                            PK: { S: 'CUSTOMER#alexdebrie'},
-                            SK: { S: 'ORDER#1VwV'},
-                            OrderId: { S: '1VwV'},
-                            CreatedAt: { S: '2020-01-04 18:53:24' },
-                            Status: { S: 'CANCELLED' },
-                            Amount: { S: '12.43' },
-                            NumberItems: { S: '2' },
-                            GSI1PK: { S: 'ORDER#1VwV' },
-                            GSI1SK: { S: 'ORDER#1VwV' },
-                        },
-                    },
+                    PK: 'CUSTOMER#alexdebrie',
+                    SK: 'ORDER#1VwV',
+                    OrderId: '1VwV',
+                    CreatedAt: '2020-01-04 18:53:24' ,
+                    Status: 'CANCELLED' ,
+                    Amount: '12.43' ,
+                    NumberItems: '2' ,
+                    GSI1PK: 'ORDER#1VwV' ,
+                    GSI1SK: 'ORDER#1VwV' ,
                 },
                 {
-                    PutRequest: {
-                        Item: {
-                            PK: { S: 'ORDER#VrgX#ITEM#48d7'},
-                            SK: { S: 'ORDER#VrgX#ITEM#48d7'},
-                            OrderId: { S: '88da49e72b80'},
-                            ItemId: { S: '48d7' },
-                            Description: { S: 'Go, Dog, Go!' },
-                            Price: { S: '9.72' },
-                            GSI1PK: { S: 'ORDER#VrgX' },
-                            GSI1SK: { S: 'ITEM#48d7' },
-                        },
-                    },
+                    PK: 'ORDER#VrgX#ITEM#48d7',
+                    SK: 'ORDER#VrgX#ITEM#48d7',
+                    OrderId: '88da49e72b80',
+                    ItemId: '48d7' ,
+                    Description: 'Go, Dog, Go!' ,
+                    Price: '9.72' ,
+                    GSI1PK: 'ORDER#VrgX' ,
+                    GSI1SK: 'ITEM#48d7' ,
                 },
                 {
-                    PutRequest: {
-                        Item: {
-                            PK: { S: 'ORDER#VrgX#ITEM#be43'},
-                            SK: { S: 'ORDER#VrgX#ITEM#be43'},
-                            OrderId: { S: '88da49e72b80'},
-                            ItemId: { S: 'be43' },
-                            Description: { S: 'Les Miserables' },
-                            Price: { S: '14.64' },
-                            GSI1PK: { S: 'ORDER#VrgX' },
-                            GSI1SK: { S: 'ITEM#be43' },
-                        },
-                    },
+                    PK: 'ORDER#VrgX#ITEM#be43',
+                    SK: 'ORDER#VrgX#ITEM#be43',
+                    OrderId: '88da49e72b80',
+                    ItemId: 'be43' ,
+                    Description: 'Les Miserables' ,
+                    Price: '14.64' ,
+                    GSI1PK: 'ORDER#VrgX' ,
+                    GSI1SK: 'ITEM#be43' ,
                 },
                 // Vito Corleone
                 {
-                    PutRequest: {
-                        Item: {
-                            PK: { S: 'CUSTOMER#the_don'},
-                            SK: { S: 'CUSTOMER#the_don'},
-                            Username: { S: 'the_don'},
-                            EmailAddress: { S: 'vito@corleone.com'},
-                            Name: { S: 'Vito Corleone'},
-                        },
-                    },
+                    PK: 'CUSTOMER#the_don',
+                    SK: 'CUSTOMER#the_don',
+                    Username: 'the_don',
+                    EmailAddress: 'vito@corleone.com',
+                    Name: 'Vito Corleone',
                 },
                 {
-                    PutRequest: {
-                        Item: {
-                            PK: { S: 'CUSTOMER#the_don'},
-                            SK: { S: 'ORDER#1W1h'},
-                            OrderId: { S: '1W1h'},
-                            CreatedAt: { S: '2020-03-03 02:57:51' },
-                            Status: { S: 'SHIPPED' },
-                            Amount: { S: '97.43' },
-                            NumberItems: { S: '4' },
-                            GSI1PK: { S: 'ORDER#1W1h' },
-                            GSI1SK: { S: 'ORDER#1W1h' },
-                        },
-                    },
+                    PK: 'CUSTOMER#the_don',
+                    SK: 'ORDER#1W1h',
+                    OrderId: '1W1h',
+                    CreatedAt: '2020-03-03 02:57:51' ,
+                    Status: 'SHIPPED' ,
+                    Amount: '97.43' ,
+                    NumberItems: '4' ,
+                    GSI1PK: 'ORDER#1W1h' ,
+                    GSI1SK: 'ORDER#1W1h' ,
                 },
-            ],
+            ].map(item => ({
+                PutRequest: { 
+                    Item: marshall(item) 
+                }
+            }))
         },
     }))
 
-    console.log(results)
+    return results
 }
 async function getOrdersByCustomer(name: String) {
     const result = await client.send(new QueryCommand({
@@ -178,10 +154,11 @@ async function reseedTable() {
 }
 
 async function main() {
-    Promise.all([
-        getOrdersByCustomer('alexdebrie'), 
-        getItemsByOrder('VrgX')]
-    ).then(console.log)
+    seedTable().then(console.log)
+    // Promise.all([
+    //     getOrdersByCustomer('alexdebrie'), 
+    //     getItemsByOrder('VrgX')]
+    // ).then(console.log)
 }
 
 main()
