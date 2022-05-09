@@ -144,6 +144,18 @@ const getOrdersByCustomer = async (context: { username: String }) => {
     return result?.Items?.map(item => unmarshall(item))
 }
 
+const getAddresses = async (context: { username: String }) => {
+    const result = await client.send(new QueryCommand({
+        TableName: 'e_commerce',
+        KeyConditionExpression: '#pk = :pk',
+        ExpressionAttributeNames: { '#pk': 'PK' },
+        ExpressionAttributeValues: { ':pk': { 'S': `CUSTOMER#${context.username}` } },
+    }))
+
+    const customer = unmarshall(result?.Items?.[0] ?? {})
+    return customer.Addresses ?? {}
+}
+
 const getItemsByOrder = async (context: { orderId: String }) => {
     const result = await client.send(new QueryCommand({
         TableName: 'e_commerce',
@@ -188,6 +200,7 @@ type PutCustomer = (context: {
     email: String,
     name: String,
     username: String,
+    addresses: Record<string, string>,
 }) => Promise<PutItemCommandOutput>
 
 const putCustomer: PutCustomer = async (context) =>
@@ -199,6 +212,9 @@ const putCustomer: PutCustomer = async (context) =>
             EmailAddress: context.email,
             Username: context.username,
             Name: context.name,
+            Addresses: context.addresses,
+        }, {
+            removeUndefinedValues: true,
         })
     }))
 
@@ -208,11 +224,12 @@ async function reseedTable() {
     await seedTable()
 }
 
-const commands: { [key: string]: Function } = {
+const commands: Record<string, Function> = {
     GET_ORDERS_BY_CUSTOMER: getOrdersByCustomer,
     GET_ITEMS_BY_ORDER: getItemsByOrder,
     PUT_CUSTOMER: putCustomer,
     PUT_ORDER: putOrder,
+    GET_ADDRESSES: getAddresses,
 }
 
 export async function handler(event: any) {
@@ -233,10 +250,14 @@ const getOrdersByCustomerObject = {
 
 const putCustomerObject = {
     "requestContext": {
-        "username": "kalli_third_account",
+        "username": "kalli_forth_account",
         "name": "Kalli Allen",
         "email": "kalli_second_email@yahoo.com",
         "type": "PUT_CUSTOMER",
+        "addresses": {
+            "Home": "123 1st ave, New York City",
+            "Work": "432 Full st, New York City",
+        },
     }
 };
 
@@ -252,6 +273,13 @@ const putOrderObject = {
     }
 };
 
+const getAddressesObject = {
+    "requestContext": {
+        "username": "kalli_forth_account",
+        "type": "GET_ADDRESSES",
+    }
+};
+
 (async () => 
-    !process.env.LAMBDA_TASK_ROOT && await handler(getOrdersByCustomerObject).then(console.log)
+    !process.env.LAMBDA_TASK_ROOT && await handler(getAddressesObject).then(console.log)
 )()
