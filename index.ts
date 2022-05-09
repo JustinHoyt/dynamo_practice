@@ -1,7 +1,15 @@
-import { DynamoDBClient, CreateTableCommand, ListTablesCommand, BatchWriteItemCommand, DeleteTableCommand, QueryCommand } from "@aws-sdk/client-dynamodb"
+import { DynamoDBClient, CreateTableCommand, ListTablesCommand, BatchWriteItemCommand, DeleteTableCommand, QueryCommand, PutItemCommand, PutItemCommandOutput } from "@aws-sdk/client-dynamodb"
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb"
 
 const client = new DynamoDBClient({ region: "us-west-2" });
+
+function upper(obj: any) {
+    for (const [key, val] of Object.entries(obj)) {
+        if (typeof(val) === 'string') {
+            obj[key] = val.toUpperCase()
+        }
+    }
+}
 
 async function createTable() {
     const results = client.send(new CreateTableCommand({ 
@@ -124,28 +132,75 @@ async function seedTable() {
 
     return results
 }
-async function getOrdersByCustomer(name: String) {
+
+const getOrdersByCustomer = async (context: { username: String }) => {
     const result = await client.send(new QueryCommand({
         TableName: 'e_commerce',
         KeyConditionExpression: '#pk = :pk',
         ExpressionAttributeNames: { '#pk': 'PK' },
-        ExpressionAttributeValues: { ':pk': { 'S': `CUSTOMER#${name}` } },
+        ExpressionAttributeValues: { ':pk': { 'S': `CUSTOMER#${context.username}` } },
     }))
 
     return result?.Items?.map(item => unmarshall(item))
 }
 
-async function getItemsByOrder(orderId: String) {
+const getItemsByOrder = async (context: { orderId: String }) => {
     const result = await client.send(new QueryCommand({
         TableName: 'e_commerce',
         IndexName: 'GSI1',
         KeyConditionExpression: '#gsi1pk = :order',
         ExpressionAttributeNames: { '#gsi1pk': 'GSI1PK' },
-        ExpressionAttributeValues: { ':order': { 'S': `ORDER#${orderId}` } },
+        ExpressionAttributeValues: { ':order': { 'S': `ORDER#${context.orderId}` } },
     }))
 
     return result?.Items?.map(item => unmarshall(item))
 }
+
+type PutOrder = (context: {
+    username: string,
+    orderId: string,
+    numberItems: string,
+    status: string,
+    amount: string,
+    createdAt: string,
+    type: string,
+}) => Promise<PutItemCommandOutput>
+
+const putOrder: PutOrder = async (context) =>
+    await client.send(new PutItemCommand({
+        TableName: 'e_commerce',
+        Item: marshall({
+            PK: `CUSTOMER#${context.username}`,
+            SK: `ORDER#${context.orderId}`,
+            GSI1PK: `ORDER#${context.orderId}`,
+            GSI1SK: `ORDER#${context.orderId}`,
+            Username: context.username,
+            OrderId: context.orderId,
+            NumberItems: context.numberItems,
+            Status: context.status,
+            Amount: context.amount,
+            CreatedAt: context.createdAt,
+            Type: 'Order',
+        })
+    }))
+
+type PutCustomer = (context: {
+    email: String,
+    name: String,
+    username: String,
+}) => Promise<PutItemCommandOutput>
+
+const putCustomer: PutCustomer = async (context) =>
+    await client.send(new PutItemCommand({
+        TableName: 'e_commerce',
+        Item: marshall({
+            PK: `CUSTOMER#${context.username}`,
+            SK: `CUSTOMER#${context.username}`,
+            EmailAddress: context.email,
+            Username: context.username,
+            Name: context.name,
+        })
+    }))
 
 async function reseedTable() {
     await deleteTable()
@@ -153,12 +208,50 @@ async function reseedTable() {
     await seedTable()
 }
 
-async function main() {
-    seedTable().then(console.log)
-    // Promise.all([
-    //     getOrdersByCustomer('alexdebrie'), 
-    //     getItemsByOrder('VrgX')]
-    // ).then(console.log)
+const commands: { [key: string]: Function } = {
+    GET_ORDERS_BY_CUSTOMER: getOrdersByCustomer,
+    GET_ITEMS_BY_ORDER: getItemsByOrder,
+    PUT_CUSTOMER: putCustomer,
+    PUT_ORDER: putOrder,
 }
 
-main()
+export async function handler(event: any) {
+    const key = event.requestContext.type
+    if (key in commands) {
+        return await commands[key](event.requestContext)
+    } else {
+        throw 'Command type not found'
+    }
+}
+
+const getOrdersByCustomerObject = {
+    "requestContext": {
+        "username": "alexdebrie",
+        "type": "GET_ORDERS_BY_CUSTOMER",
+    }
+};
+
+const putCustomerObject = {
+    "requestContext": {
+        "username": "kalli_third_account",
+        "name": "Kalli Allen",
+        "email": "kalli_second_email@yahoo.com",
+        "type": "PUT_CUSTOMER",
+    }
+};
+
+const putOrderObject = {
+    "requestContext": {
+        "username": "JustinHoyt",
+        "orderId": '112141',
+        "numberItems": "4",
+        "status": "SHIPPING",
+        "amount": "142",
+        "createdAt": "2020-03-01 23:20:02",
+        "type": "PUT_ORDER",
+    }
+};
+
+(async () => 
+    !process.env.LAMBDA_TASK_ROOT && await handler(getOrdersByCustomerObject).then(console.log)
+)()
