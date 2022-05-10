@@ -12,10 +12,10 @@ function upper(obj: any) {
 }
 
 async function createTable() {
-    const results = client.send(new CreateTableCommand({ 
+    const results = client.send(new CreateTableCommand({
         BillingMode: 'PAY_PER_REQUEST',
         TableName: 'e_commerce',
-        KeySchema: [             
+        KeySchema: [
             {
                 AttributeName: 'PK',
                 KeyType: 'HASH',
@@ -123,8 +123,8 @@ async function seedTable() {
                     GSI1SK: 'ORDER#1W1h' ,
                 },
             ].map(item => ({
-                PutRequest: { 
-                    Item: marshall(item) 
+                PutRequest: {
+                    Item: marshall(item)
                 }
             }))
         },
@@ -147,9 +147,15 @@ const getOrdersByCustomer = async (context: { username: String }) => {
 const getAddresses = async (context: { username: String }) => {
     const result = await client.send(new QueryCommand({
         TableName: 'e_commerce',
-        KeyConditionExpression: '#pk = :pk',
-        ExpressionAttributeNames: { '#pk': 'PK' },
-        ExpressionAttributeValues: { ':pk': { 'S': `CUSTOMER#${context.username}` } },
+        KeyConditionExpression: '#pk = :pk AND begins_with(#sk, :customer)',
+        ExpressionAttributeNames: {
+            '#pk': 'PK',
+            '#sk': 'SK',
+        },
+        ExpressionAttributeValues: {
+            ':pk': { 'S': `CUSTOMER#${context.username}` },
+            ':customer': { 'S': 'CUSTOMER#' },
+        },
     }))
 
     const customer = unmarshall(result?.Items?.[0] ?? {})
@@ -280,6 +286,6 @@ const getAddressesObject = {
     }
 };
 
-(async () => 
-    !process.env.LAMBDA_TASK_ROOT && await handler(getAddressesObject).then(console.log)
-)()
+if (!process.env.LAMBDA_TASK_ROOT) {
+    (async () => await handler(getAddressesObject).then(console.log))()
+}
