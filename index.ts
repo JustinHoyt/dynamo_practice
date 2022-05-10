@@ -1,4 +1,4 @@
-import { DynamoDBClient, CreateTableCommand, ListTablesCommand, BatchWriteItemCommand, DeleteTableCommand, QueryCommand, PutItemCommand, PutItemCommandOutput } from "@aws-sdk/client-dynamodb"
+import { DynamoDBClient, CreateTableCommand, ListTablesCommand, BatchWriteItemCommand, DeleteTableCommand, QueryCommand, PutItemCommand, PutItemCommandOutput, UpdateItemCommand } from "@aws-sdk/client-dynamodb"
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb"
 
 const client = new DynamoDBClient({ region: "us-west-2" });
@@ -218,10 +218,28 @@ const putCustomer: PutCustomer = async (context) =>
             EmailAddress: context.email,
             Username: context.username,
             Name: context.name,
-            Addresses: context.addresses,
+            Addresses: context.addresses ?? {},
         }, {
             removeUndefinedValues: true,
         })
+    }))
+
+
+type UpdateAddresses = (context: {
+    username: String,
+    addresses: Record<string, string>,
+}) => Promise<PutItemCommandOutput>
+
+const updateAddresses: UpdateAddresses = async (context) =>
+    await client.send(new UpdateItemCommand({
+        TableName: 'e_commerce',
+        Key: marshall({
+            PK: `CUSTOMER#${context.username}`,
+            SK: `CUSTOMER#${context.username}`,
+        }),
+        UpdateExpression: 'SET #addresses = :addresses',
+        ExpressionAttributeNames: { '#addresses': 'Addresses' },
+        ExpressionAttributeValues: { ':addresses': { 'M': marshall(context.addresses) } },
     }))
 
 async function reseedTable() {
@@ -236,6 +254,7 @@ const commands: Record<string, Function> = {
     PUT_CUSTOMER: putCustomer,
     PUT_ORDER: putOrder,
     GET_ADDRESSES: getAddresses,
+    UPDATE_ADDRESSES: updateAddresses,
 }
 
 export async function handler(event: any) {
@@ -283,6 +302,17 @@ const getAddressesObject = {
     "requestContext": {
         "username": "kalli_forth_account",
         "type": "GET_ADDRESSES",
+    }
+};
+
+const updateAddressesObject = {
+    "requestContext": {
+        "username": "kalli_forth_account",
+        "addresses": {
+            "Home": "123 new home st, Seattle",
+            "Work": "3 work st, Portland",
+        },
+        "type": "UPDATE_ADDRESSES",
     }
 };
 
